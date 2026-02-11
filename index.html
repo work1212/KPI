@@ -7,55 +7,75 @@
 <style>
 
 body{
-  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
-  max-width:520px;
-  margin:auto;
-  padding:20px;
-  background:#f2f4f7;
-}
-
-h2{
-  text-align:center;
+font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+max-width:520px;
+margin:auto;
+padding:20px;
+background:#f2f4f7;
 }
 
 .card{
-  background:white;
-  padding:15px;
-  margin-top:15px;
-  border-radius:10px;
+background:white;
+padding:15px;
+margin-top:15px;
+border-radius:10px;
+}
+
+h2{
+text-align:center;
 }
 
 input[type="text"]{
-  width:100%;
-  padding:10px;
-  margin-top:5px;
-  margin-bottom:10px;
-  font-size:16px;
+width:100%;
+padding:10px;
+margin-top:5px;
+margin-bottom:10px;
+font-size:16px;
+}
+
+select{
+width:100%;
+padding:10px;
+margin-bottom:10px;
 }
 
 .checkbox-row{
-  display:flex;
-  align-items:center;
-  margin-top:8px;
+display:flex;
+align-items:center;
+margin-top:8px;
 }
 
 .checkbox-row input{
-  margin-right:8px;
+margin-right:8px;
 }
 
 button{
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  border:none;
-  border-radius:8px;
-  background:black;
-  color:white;
-  font-size:16px;
+width:100%;
+padding:12px;
+margin-top:10px;
+border:none;
+border-radius:8px;
+background:black;
+color:white;
+font-size:16px;
+}
+
+.danger{
+color:red;
+font-weight:bold;
+}
+
+.safe{
+color:green;
+font-weight:bold;
+}
+
+.warn{
+color:orange;
+font-weight:bold;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -64,16 +84,21 @@ button{
 
 <div class="card">
 
-<label>店舗を選択：</label>
+<label>店舗</label>
 
 <select id="storeSelect" onchange="changeStore()">
 <option value="adachi">足立店</option>
 <option value="edogawa">江戸川店</option>
 </select>
 
+<label>月</label>
+
+<select id="monthSelect" onchange="changeMonth()">
+</select>
+
 <h3>
-今月の販売目標頭数：
-<span id="targetDisplay">27</span> 頭
+販売目標：
+<span id="targetDisplay">0</span>頭
 </h3>
 
 </div>
@@ -84,26 +109,22 @@ button{
 <h3>契約追加</h3>
 
 <input type="text" id="rate" placeholder="生保率(%)">
-<input type="text" id="futai" placeholder="商品付帯金額(円)">
+
+<input type="text" id="futai" placeholder="付帯金額">
 
 <div class="checkbox-row">
 <input type="checkbox" id="premium">
-<label for="premium">プレミアム加入</label>
+<label>プレミアム加入</label>
 </div>
 
 <div class="checkbox-row">
 <input type="checkbox" id="iryo">
-<label for="iryo">医保加入</label>
+<label>医保加入</label>
 </div>
 
 <div class="checkbox-row">
 <input type="checkbox" id="food">
-<label for="food">フード定期</label>
-</div>
-
-<div class="checkbox-row">
-<input type="checkbox" id="hospital">
-<label for="hospital">病院予約</label>
+<label>フード定期</label>
 </div>
 
 <button onclick="addContract()">契約追加</button>
@@ -122,39 +143,111 @@ button{
 
 <script>
 
-// 店舗目標
-const storeTargets = {
-
+// 店舗目標設定
+const storeTargets={
 adachi:27,
 edogawa:16
-
 };
 
 let currentStore="adachi";
-let targetCount=27;
+let currentMonth="";
+let targetCount=0;
 
-let salesCount=0;
-let premiumCount=0;
-let iryoCount=0;
-let foodCount=0;
+// 保存キー生成
+function getKey(){
+return "kpi_"+currentStore+"_"+currentMonth;
+}
 
+// 月初期化
+function initMonth(){
 
-// 店舗変更
-function changeStore(){
+const now=new Date();
 
-currentStore =
-document.getElementById("storeSelect").value;
+for(let i=-2;i<=2;i++){
 
-targetCount =
-storeTargets[currentStore];
+const d=new Date();
+d.setMonth(now.getMonth()+i);
 
-document.getElementById("targetDisplay").innerText =
-targetCount;
+const y=d.getFullYear();
+const m=("0"+(d.getMonth()+1)).slice(-2);
+
+const value=y+"-"+m;
+
+const option=document.createElement("option");
+option.value=value;
+option.text=y+"年"+m+"月";
+
+document.getElementById("monthSelect").appendChild(option);
+
+if(i==0){
+currentMonth=value;
+option.selected=true;
+}
+
+}
+
+}
+
+// 保存
+function saveData(){
+
+const data={
+salesCount,
+premiumCount,
+iryoCount,
+foodCount
+};
+
+localStorage.setItem(getKey(),JSON.stringify(data));
+
+}
+
+// 読込
+function loadData(){
+
+const saved=localStorage.getItem(getKey());
+
+if(saved){
+
+const data=JSON.parse(saved);
+
+salesCount=data.salesCount||0;
+premiumCount=data.premiumCount||0;
+iryoCount=data.iryoCount||0;
+foodCount=data.foodCount||0;
+
+}else{
+
+salesCount=0;
+premiumCount=0;
+iryoCount=0;
+foodCount=0;
+
+}
 
 updateStatus();
 
 }
 
+// 店舗変更
+function changeStore(){
+
+currentStore=document.getElementById("storeSelect").value;
+targetCount=storeTargets[currentStore];
+
+document.getElementById("targetDisplay").innerText=targetCount;
+
+loadData();
+
+}
+
+// 月変更
+function changeMonth(){
+
+currentMonth=document.getElementById("monthSelect").value;
+loadData();
+
+}
 
 // 契約追加
 function addContract(){
@@ -170,56 +263,73 @@ iryoCount++;
 if(document.getElementById("food").checked)
 foodCount++;
 
+saveData();
 updateStatus();
 
 }
 
-
 // 状況更新
 function updateStatus(){
 
-let remain =
-targetCount - salesCount;
+let remain=targetCount-salesCount;
 
-let premiumRate =
-salesCount ? (premiumCount/salesCount*100).toFixed(1) : 0;
+let premiumRate=salesCount?premiumCount/salesCount*100:0;
+let iryoRate=salesCount?iryoCount/salesCount*100:0;
+let foodRate=salesCount?foodCount/salesCount*100:0;
 
-let iryoRate =
-salesCount ? (iryoCount/salesCount*100).toFixed(1) : 0;
+let premiumStatus=premiumRate>=50?"safe":"danger";
+let iryoStatus=iryoRate>=60?"safe":"danger";
+let foodStatus=foodRate>=60?"safe":"danger";
 
-let foodRate =
-salesCount ? (foodCount/salesCount*100).toFixed(1) : 0;
+let needPremium=remain>0?(50*(salesCount+remain)-premiumCount)/remain:0;
 
+document.getElementById("status").innerHTML=`
 
-document.getElementById("status").innerHTML=
-
-`
 販売頭数：
 ${salesCount} / ${targetCount}
-（残り ${remain} 頭）
+（残り ${remain}）
 
 <br><br>
 
-プレミアム率：
-${premiumRate}%
+生保率：
+<span class="${premiumStatus}">
+${premiumRate.toFixed(1)}%
+${premiumStatus=="danger"?"危険！":"安全"}
+</span>
 
 <br>
+
+残り1頭あたり必要生保率：
+${needPremium.toFixed(1)}%
+
+<br><br>
 
 医保率：
-${iryoRate}%
+<span class="${iryoStatus}">
+${iryoRate.toFixed(1)}%
+${iryoStatus=="danger"?"危険！":"安全"}
+</span>
 
-<br>
+<br><br>
 
 フード率：
-${foodRate}%
+<span class="${foodStatus}">
+${foodRate.toFixed(1)}%
+${foodStatus=="danger"?"危険！":"安全"}
+</span>
 
 `;
 
 }
 
+// 初期化
+let salesCount=0;
+let premiumCount=0;
+let iryoCount=0;
+let foodCount=0;
 
-// 初期表示
-updateStatus();
+initMonth();
+changeStore();
 
 </script>
 
