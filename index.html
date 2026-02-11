@@ -113,6 +113,32 @@ border-bottom:none;
 }
 </style>
 </head>
+  <h2>KPIダッシュボード</h2>
+
+<label>店舗を選択：</label>
+<select id="storeSelect" onchange="updateTarget()">
+  <option value="adachi">足立店</option>
+  <option value="edogawa">江戸川店</option>
+</select>
+
+<h3>今月の販売目標頭数：<span id="target">0</span> 頭</h3>
+
+<script>
+// 店舗ごとの今月目標
+const targets = {
+  adachi: 27,
+  edogawa: 16
+};
+
+function updateTarget() {
+  const store = document.getElementById("storeSelect").value;
+  const target = targets[store];
+  document.getElementById("target").textContent = target;
+}
+
+// 初期表示
+updateTarget();
+</script>
 <body>
 
 <h2>営業KPI</h2>
@@ -278,6 +304,17 @@ save();
 render();
 }
 }
+  const targets = {
+  adachi: 27,
+  edogawa: 16
+};
+
+function updateTarget() {
+  const store = document.getElementById("storeSelect").value;
+  document.getElementById("target").textContent = targets[store];
+}
+
+updateTarget();
 
 render();
 </script>
