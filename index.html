@@ -2,16 +2,16 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>営業KPI</title>
+<title>KPIダッシュボード</title>
 
 <style>
+
 body{
   font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
   max-width:520px;
   margin:auto;
   padding:20px;
   background:#f2f4f7;
-  color:#333;
 }
 
 h2{
@@ -21,8 +21,26 @@ h2{
 .card{
   background:white;
   padding:15px;
-  border-radius:10px;
   margin-top:15px;
+  border-radius:10px;
+}
+
+input[type="text"]{
+  width:100%;
+  padding:10px;
+  margin-top:5px;
+  margin-bottom:10px;
+  font-size:16px;
+}
+
+.checkbox-row{
+  display:flex;
+  align-items:center;
+  margin-top:8px;
+}
+
+.checkbox-row input{
+  margin-right:8px;
 }
 
 button{
@@ -36,50 +54,62 @@ button{
   font-size:16px;
 }
 
-input{
-  width:100%;
-  padding:8px;
-  margin-top:5px;
-  margin-bottom:10px;
-}
-
-label{
-  display:block;
-  margin-top:10px;
-}
 </style>
 
 </head>
 
 <body>
 
-<h2>営業KPI</h2>
+<h2>KPIダッシュボード</h2>
 
 <div class="card">
 
-<label>店舗選択</label>
+<label>店舗を選択：</label>
+
 <select id="storeSelect" onchange="changeStore()">
 <option value="adachi">足立店</option>
 <option value="edogawa">江戸川店</option>
 </select>
 
+<h3>
+今月の販売目標頭数：
+<span id="targetDisplay">27</span> 頭
+</h3>
+
 </div>
+
 
 <div class="card">
 
 <h3>契約追加</h3>
 
-<input type="number" id="rate" placeholder="生保率(%)">
-<input type="number" id="futai" placeholder="商品付帯金額(円)">
+<input type="text" id="rate" placeholder="生保率(%)">
+<input type="text" id="futai" placeholder="商品付帯金額(円)">
 
-<label><input type="checkbox" id="premium"> プレミアム加入</label>
-<label><input type="checkbox" id="iryo"> 医保加入</label>
-<label><input type="checkbox" id="food"> フード定期</label>
-<label><input type="checkbox" id="hospital"> 病院予約</label>
+<div class="checkbox-row">
+<input type="checkbox" id="premium">
+<label for="premium">プレミアム加入</label>
+</div>
+
+<div class="checkbox-row">
+<input type="checkbox" id="iryo">
+<label for="iryo">医保加入</label>
+</div>
+
+<div class="checkbox-row">
+<input type="checkbox" id="food">
+<label for="food">フード定期</label>
+</div>
+
+<div class="checkbox-row">
+<input type="checkbox" id="hospital">
+<label for="hospital">病院予約</label>
+</div>
 
 <button onclick="addContract()">契約追加</button>
 
 </div>
+
 
 <div class="card">
 
@@ -89,83 +119,104 @@ label{
 
 </div>
 
+
 <script>
 
-// 店舗ごとの目標
+// 店舗目標
 const storeTargets = {
-  adachi: 27,
-  edogawa: 16
+
+adachi:27,
+edogawa:16
+
 };
 
-// 現在の店舗
-let currentStore = "adachi";
+let currentStore="adachi";
+let targetCount=27;
 
-// 現在の目標
-let targetCount = storeTargets[currentStore];
+let salesCount=0;
+let premiumCount=0;
+let iryoCount=0;
+let foodCount=0;
 
-// 実績
-let salesCount = 0;
-let premiumCount = 0;
-let iryoCount = 0;
-let foodCount = 0;
 
+// 店舗変更
 function changeStore(){
 
-  currentStore =
-    document.getElementById("storeSelect").value;
+currentStore =
+document.getElementById("storeSelect").value;
 
-  targetCount =
-    storeTargets[currentStore];
+targetCount =
+storeTargets[currentStore];
 
-  updateStatus();
+document.getElementById("targetDisplay").innerText =
+targetCount;
+
+updateStatus();
 
 }
 
+
+// 契約追加
 function addContract(){
 
-  salesCount++;
+salesCount++;
 
-  if(document.getElementById("premium").checked)
-    premiumCount++;
+if(document.getElementById("premium").checked)
+premiumCount++;
 
-  if(document.getElementById("iryo").checked)
-    iryoCount++;
+if(document.getElementById("iryo").checked)
+iryoCount++;
 
-  if(document.getElementById("food").checked)
-    foodCount++;
+if(document.getElementById("food").checked)
+foodCount++;
 
-  updateStatus();
+updateStatus();
 
 }
 
+
+// 状況更新
 function updateStatus(){
 
-  let remain =
-    targetCount - salesCount;
+let remain =
+targetCount - salesCount;
 
-  let premiumRate =
-    salesCount ? (premiumCount/salesCount*100).toFixed(1) : 0;
+let premiumRate =
+salesCount ? (premiumCount/salesCount*100).toFixed(1) : 0;
 
-  let iryoRate =
-    salesCount ? (iryoCount/salesCount*100).toFixed(1) : 0;
+let iryoRate =
+salesCount ? (iryoCount/salesCount*100).toFixed(1) : 0;
 
-  let foodRate =
-    salesCount ? (foodCount/salesCount*100).toFixed(1) : 0;
+let foodRate =
+salesCount ? (foodCount/salesCount*100).toFixed(1) : 0;
 
-  document.getElementById("status").innerHTML =
 
-  `
-販売頭数： ${salesCount} / ${targetCount}
-（残り ${remain}）
+document.getElementById("status").innerHTML=
 
-生保率： ${premiumRate}%
+`
+販売頭数：
+${salesCount} / ${targetCount}
+（残り ${remain} 頭）
 
-医保率： ${iryoRate}%
+<br><br>
 
-フード率： ${foodRate}%
-  `;
+プレミアム率：
+${premiumRate}%
+
+<br>
+
+医保率：
+${iryoRate}%
+
+<br>
+
+フード率：
+${foodRate}%
+
+`;
 
 }
+
 
 // 初期表示
 updateStatus();
