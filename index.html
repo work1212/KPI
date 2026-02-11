@@ -2,321 +2,174 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>足立本店KPI</title>
+<title>営業KPI</title>
+
 <style>
 body{
-font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
-max-width:520px;
-margin:auto;
-padding:20px;
-background:#f2f4f7;
-color:#333;
+  font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+  max-width:520px;
+  margin:auto;
+  padding:20px;
+  background:#f2f4f7;
+  color:#333;
 }
 
 h2{
-text-align:center;
-margin-bottom:25px;
-font-weight:700;
-}
-
-h3{
-margin-top:25px;
-margin-bottom:10px;
-}
-
-label{
-display:block;
-margin-top:15px;
-font-weight:600;
-font-size:14px;
-}
-
-input{
-width:100%;
-padding:12px;
-margin-top:6px;
-border-radius:10px;
-border:1px solid #d0d5dd;
-font-size:16px;
-background:white;
-box-shadow:0 1px 2px rgba(0,0,0,0.05);
-}
-
-button{
-width:100%;
-padding:14px;
-margin-top:20px;
-border:none;
-border-radius:12px;
-background:linear-gradient(135deg,#111,#333);
-color:white;
-font-size:16px;
-font-weight:600;
-cursor:pointer;
-transition:0.2s;
-}
-
-button:hover{
-opacity:0.9;
-transform:translateY(-1px);
+  text-align:center;
 }
 
 .card{
-background:white;
-padding:18px;
-border-radius:16px;
-margin-top:20px;
-box-shadow:0 4px 12px rgba(0,0,0,0.08);
+  background:white;
+  padding:15px;
+  border-radius:10px;
+  margin-top:15px;
 }
 
-.good{
-color:#16a34a;
-font-weight:700;
+button{
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border:none;
+  border-radius:8px;
+  background:black;
+  color:white;
+  font-size:16px;
 }
 
-.mid{
-color:#f59e0b;
-font-weight:700;
+input{
+  width:100%;
+  padding:8px;
+  margin-top:5px;
+  margin-bottom:10px;
 }
 
-.bad{
-color:#dc2626;
-font-weight:700;
-}
-
-table{
-width:100%;
-margin-top:20px;
-border-collapse:collapse;
-background:white;
-border-radius:12px;
-overflow:hidden;
-box-shadow:0 4px 12px rgba(0,0,0,0.05);
-}
-
-th{
-background:#111;
-color:white;
-font-weight:600;
-padding:10px;
-font-size:13px;
-}
-
-td{
-border-bottom:1px solid #eee;
-padding:8px;
-font-size:13px;
-}
-
-tr:last-child td{
-border-bottom:none;
+label{
+  display:block;
+  margin-top:10px;
 }
 </style>
+
 </head>
-  <h2>KPIダッシュボード</h2>
 
-<label>店舗を選択：</label>
-<select id="storeSelect" onchange="updateTarget()">
-  <option value="adachi">足立店</option>
-  <option value="edogawa">江戸川店</option>
-</select>
-
-<h3>今月の販売目標頭数：<span id="target">0</span> 頭</h3>
-
-<script>
-// 店舗ごとの今月目標
-const targets = {
-  adachi: 27,
-  edogawa: 16
-};
-
-function updateTarget() {
-  const store = document.getElementById("storeSelect").value;
-  const target = targets[store];
-  document.getElementById("target").textContent = target;
-}
-
-// 初期表示
-updateTarget();
-</script>
 <body>
 
 <h2>営業KPI</h2>
 
+<div class="card">
+
+<label>店舗選択</label>
+<select id="storeSelect" onchange="changeStore()">
+<option value="adachi">足立店</option>
+<option value="edogawa">江戸川店</option>
+</select>
+
+</div>
+
+<div class="card">
+
 <h3>契約追加</h3>
+
 <input type="number" id="rate" placeholder="生保率(%)">
 <input type="number" id="futai" placeholder="商品付帯金額(円)">
+
 <label><input type="checkbox" id="premium"> プレミアム加入</label>
 <label><input type="checkbox" id="iryo"> 医保加入</label>
 <label><input type="checkbox" id="food"> フード定期</label>
 <label><input type="checkbox" id="hospital"> 病院予約</label>
+
 <button onclick="addContract()">契約追加</button>
 
-<div class="card">
-<h3>現在状況</h3>
-<div id="status"></div>
 </div>
 
-<h3>契約履歴</h3>
-<table>
-<thead>
-<tr>
-<th>No</th>
-<th>生保率</th>
-<th>付帯</th>
-<th>プレ</th>
-<th>医保</th>
-<th>フード</th>
-<th>削除</th>
-</tr>
-</thead>
-<tbody id="list"></tbody>
-</table>
+<div class="card">
 
-<button onclick="exportCSV()">CSV出力</button>
-<button onclick="resetData()">月リセット</button>
+<h3>現在状況</h3>
+
+<div id="status"></div>
+
+</div>
 
 <script>
-const goal=27;
-const sehoAvgTarget=30;
-const sehoJoinTarget=0.9;
-const iryoTarget=0.9;
-const foodTarget=0.7;
-const futaiTarget=50000;
 
-let contracts=JSON.parse(localStorage.getItem("contracts")||"[]");
-
-function save(){
-localStorage.setItem("contracts",JSON.stringify(contracts));
-}
-
-function addContract(){
-let rate=Number(document.getElementById("rate").value)||0;
-let futai=Number(document.getElementById("futai").value)||0;
-let premium=document.getElementById("premium").checked;
-let iryo=document.getElementById("iryo").checked;
-let food=document.getElementById("food").checked;
-let hospital=document.getElementById("hospital").checked;
-
-contracts.push({rate,futai,premium,iryo,food,hospital});
-save();
-render();
-}
-
-function deleteContract(i){
-contracts.splice(i,1);
-save();
-render();
-}
-
-function judge(value,target){
-if(value>=target) return '<span class="good">達成</span>';
-if(value>=target*0.8) return '<span class="mid">注意</span>';
-return '<span class="bad">危険</span>';
-}
-
-function render(){
-let sold=contracts.length;
-let remain=goal-sold;
-
-let sehoTotal=contracts.reduce((a,b)=>a+b.rate,0);
-let iryoCount=contracts.filter(c=>c.iryo).length;
-let foodCount=contracts.filter(c=>c.food).length;
-let hospitalCount=contracts.filter(c=>c.hospital).length;
-let premiumCount=contracts.filter(c=>c.premium).length;
-let futaiSum=contracts.reduce((a,b)=>a+b.futai,0);
-
-let sehoAvg=sold? sehoTotal/sold:0;
-let futaiAvg=sold? futaiSum/sold:0;
-
-let iryoRate=sold?iryoCount/sold:0;
-let foodRate=sold?foodCount/sold:0;
-let hospitalRate=sold?hospitalCount/sold:0;
-let premiumRate=sold?premiumCount/sold:0;
-
-let needIryo=Math.max(0,Math.ceil(goal*iryoTarget)-iryoCount);
-let needFood=Math.max(0,Math.ceil(goal*foodTarget)-foodCount);
-let needPremium=Math.max(0,goal-premiumCount);
-let needHospital=Math.max(0,goal-hospitalCount);
-
-let needSehoTotal=sehoAvgTarget*goal-sehoTotal;
-let needSehoPerHead=remain>0? (needSehoTotal/remain):0;
-
-let needFutaiTotal=futaiTarget*goal-futaiSum;
-let needFutaiPerHead=remain>0? (needFutaiTotal/remain):0;
-
-let statusHTML=`
-販売頭数：${sold}/${goal}（残り${remain}）<br><br>
-
-生保平均：${sehoAvg.toFixed(1)}% ${judge(sehoAvg,sehoAvgTarget)}<br>
-→ 残り1頭あたり必要生保率：${remain>0?needSehoPerHead.toFixed(1):0}%<br><br>
-
-医保率：${(iryoRate*100).toFixed(1)}% ${judge(iryoRate,iryoTarget)}<br>
-→ あと${needIryo}件必要<br><br>
-
-フード率：${(foodRate*100).toFixed(1)}% ${judge(foodRate,foodTarget)}<br>
-→ あと${needFood}件必要<br><br>
-
-プレミアム率：${(premiumRate*100).toFixed(1)}% ${judge(premiumRate,1)}<br>
-→ あと${needPremium}件必要<br><br>
-
-病院率：${(hospitalRate*100).toFixed(1)}% ${judge(hospitalRate,1)}<br>
-→ あと${needHospital}件必要<br><br>
-
-付帯平均：${Math.round(futaiAvg)}円 ${judge(futaiAvg,futaiTarget)}<br>
-→ 残り1頭あたり必要付帯：${remain>0?Math.ceil(needFutaiPerHead):0}円
-`;
-
-document.getElementById("status").innerHTML=statusHTML;
-
-let list="";
-contracts.forEach((c,i)=>{
-list+=`
-<tr>
-<td>${i+1}</td>
-<td>${c.rate}%</td>
-<td>${c.futai}</td>
-<td>${c.premium?"○":"×"}</td>
-<td>${c.iryo?"○":"×"}</td>
-<td>${c.food?"○":"×"}</td>
-<td><button onclick="deleteContract(${i})">削除</button></td>
-</tr>`;
-});
-document.getElementById("list").innerHTML=list;
-}
-
-function exportCSV(){
-let csv="No,生保率,付帯,プレミアム,医保,フード,病院\n";
-contracts.forEach((c,i)=>{
-csv+=`${i+1},${c.rate},${c.futai},${c.premium},${c.iryo},${c.food},${c.hospital}\n`;
-});
-let blob=new Blob([csv],{type:"text/csv"});
-let link=document.createElement("a");
-link.href=URL.createObjectURL(blob);
-link.download="kpi.csv";
-link.click();
-}
-
-function resetData(){
-if(confirm("本当にリセットしますか？")){
-contracts=[];
-save();
-render();
-}
-}
-  const targets = {
+// 店舗ごとの目標
+const storeTargets = {
   adachi: 27,
   edogawa: 16
 };
 
-function updateTarget() {
-  const store = document.getElementById("storeSelect").value;
-  document.getElementById("target").textContent = targets[store];
+// 現在の店舗
+let currentStore = "adachi";
+
+// 現在の目標
+let targetCount = storeTargets[currentStore];
+
+// 実績
+let salesCount = 0;
+let premiumCount = 0;
+let iryoCount = 0;
+let foodCount = 0;
+
+function changeStore(){
+
+  currentStore =
+    document.getElementById("storeSelect").value;
+
+  targetCount =
+    storeTargets[currentStore];
+
+  updateStatus();
+
 }
 
-updateTarget();
+function addContract(){
 
-render();
+  salesCount++;
+
+  if(document.getElementById("premium").checked)
+    premiumCount++;
+
+  if(document.getElementById("iryo").checked)
+    iryoCount++;
+
+  if(document.getElementById("food").checked)
+    foodCount++;
+
+  updateStatus();
+
+}
+
+function updateStatus(){
+
+  let remain =
+    targetCount - salesCount;
+
+  let premiumRate =
+    salesCount ? (premiumCount/salesCount*100).toFixed(1) : 0;
+
+  let iryoRate =
+    salesCount ? (iryoCount/salesCount*100).toFixed(1) : 0;
+
+  let foodRate =
+    salesCount ? (foodCount/salesCount*100).toFixed(1) : 0;
+
+  document.getElementById("status").innerHTML =
+
+  `
+販売頭数： ${salesCount} / ${targetCount}
+（残り ${remain}）
+
+生保率： ${premiumRate}%
+
+医保率： ${iryoRate}%
+
+フード率： ${foodRate}%
+  `;
+
+}
+
+// 初期表示
+updateStatus();
+
 </script>
 
 </body>
