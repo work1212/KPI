@@ -123,10 +123,16 @@ amount:Number(amount.value)||0
 };
 
 if(editIndex!==null){
+
+// ★ 上書き更新（編集）
 data[editIndex]=item;
 editIndex=null;
+
 }else{
+
+// ★ 新規追加
 data.push(item);
+
 }
 
 save();
@@ -206,8 +212,15 @@ data.forEach((d,i)=>{
 html+=`
 <div class="historyItem">
 
-${d.staff}
-<br>
+<b>${d.staff}</b><br>
+
+生保率: ${d.seibo}%<br>
+医保: ${d.medical?"〇":"×"}　
+プレミアム: ${d.premium?"〇":"×"}　
+ローン: ${d.loan?"〇":"×"}　
+病院: ${d.hospital?"〇":"×"}<br>
+
+付帯金額: ${d.amount}円<br>
 
 <button class="editBtn" onclick="edit(${i})">編集</button>
 
@@ -235,6 +248,9 @@ hospital.checked=d.hospital;
 amount.value=d.amount;
 
 editIndex=i;
+
+// ★ 編集モード視覚フィードバック
+window.scrollTo({top:0,behavior:"smooth"});
 
 }
 
