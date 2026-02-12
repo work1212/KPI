@@ -6,7 +6,6 @@
 <title>KPIダッシュボード</title>
 
 <style>
-
 body{
 font-family:sans-serif;
 background:#f2f2f2;
@@ -48,12 +47,10 @@ margin-top:5px;
 
 .good{color:green;}
 .bad{color:red;}
-
 </style>
 
 </head>
 <body>
-
 
 <div class="card">
 
@@ -73,10 +70,10 @@ margin-top:5px;
 <option value="50">100ヶ月</option>
 </select><br><br>
 
-<label><input type="checkbox" id="medical"> 医保</label><br>
-<label><input type="checkbox" id="premium"> プレミアム</label><br>
-<label><input type="checkbox" id="loan"> ローン</label><br>
-<label><input type="checkbox" id="hospital"> 病院</label><br><br>
+<label><input type="checkbox" id="medical"> 医保加入</label><br>
+<label><input type="checkbox" id="premium"> プレミアム加入</label><br>
+<label><input type="checkbox" id="loan"> ローン利用</label><br>
+<label><input type="checkbox" id="hospital"> 病院予約</label><br><br>
 
 付帯金額<br>
 <input id="amount"><br><br>
@@ -86,18 +83,15 @@ margin-top:5px;
 </div>
 
 
-
 <div class="card">
 <h3>店舗KPI</h3>
 <div id="shopKPI"></div>
 </div>
 
-
 <div class="card">
 <h3>担当者KPI</h3>
 <div id="staffKPI"></div>
 </div>
-
 
 <div class="card">
 <h3>履歴</h3>
@@ -105,190 +99,161 @@ margin-top:5px;
 </div>
 
 
-
 <script>
 
 let data=JSON.parse(localStorage.getItem("kpiData")||"[]");
-
 let editIndex=null;
 
 const TARGET=27;
 
-
-
 function save(){
-
 localStorage.setItem("kpiData",JSON.stringify(data));
-
 }
-
-
 
 function add(){
 
 const item={
-
 staff:staff.value||"未入力",
-
 seibo:Number(seibo.value),
-
 medical:medical.checked,
-
 premium:premium.checked,
-
 loan:loan.checked,
-
-hospital:hospital.checked,
-
+hospital: hospital.checked,
 amount:Number(amount.value)||0
-
 };
 
-
 if(editIndex!==null){
-
 data[editIndex]=item;
-
 editIndex=null;
-
 }else{
-
 data.push(item);
-
 }
 
-
 save();
-
 renderAll();
-
 clearForm();
 
 }
 
-
-
 function clearForm(){
 
 staff.value="";
-
 seibo.value=0;
-
 medical.checked=false;
-
 premium.checked=false;
-
 loan.checked=false;
-
 hospital.checked=false;
-
 amount.value="";
 
 }
 
-
-
 function renderAll(){
 
 renderShop();
-
 renderStaff();
-
 renderHistory();
 
 }
 
-
-
 function renderShop(){
 
 let total=data.length;
+let remain=TARGET-total;
 
 let seiboCount=data.filter(d=>d.seibo>0).length;
+let seiboRate=(seiboCount/total*100)||0;
 
-let seiboRate=total?seiboCount/total*100:0;
+let targetRate=90;
+let neededCount=Math.ceil((targetRate/100)*TARGET);
+let remainNeed=neededCount-seiboCount;
+let remainRate=remain>0?(remainNeed/remain*100):0;
 
 let html=`
+販売進捗： ${total}/${TARGET}（残り${remain}）<br><br>
 
-販売進捗: ${total}/${TARGET}<br>
-
-生保加入率: <span class="${seiboRate>=90?'good':'bad'}">${seiboRate.toFixed(1)}%</span>
-
+生保加入率：
+<span class="${seiboRate>=targetRate?'good':'bad'}">
+${seiboRate.toFixed(1)}%
+</span>
+${remain>0?`　残り必要平均 ${remainRate.toFixed(1)}%`:"　達成"}
 `;
 
 shopKPI.innerHTML=html;
 
 }
 
-
-
 function renderStaff(){
 
 let map={};
-
 
 data.forEach(d=>{
 
 if(!map[d.staff]){
 
-map[d.staff]={count:0,seibo:0};
+map[d.staff]={
+count:0,
+seiboTotal:0,
+medical:0,
+premium:0,
+loan:0,
+hospital:0,
+amount:0
+};
 
 }
 
-map[d.staff].count++;
+let s=map[d.staff];
 
-if(d.seibo>0){
+s.count++;
 
-map[d.staff].seibo++;
+if(d.seibo>0)s.seiboTotal+=d.seibo;
+if(d.medical)s.medical++;
+if(d.premium)s.premium++;
+if(d.loan)s.loan++;
+if(d.hospital)s.hospital++;
 
-}
+s.amount+=d.amount;
 
 });
 
-
 let html="";
-
 
 for(let name in map){
 
-let rate=map[name].count?map[name].seibo/map[name].count*100:0;
+let s=map[name];
 
 html+=`
-
 <div>
 
 <b>${name}</b><br>
 
-販売: ${map[name].count}<br>
+販売：${s.count}<br>
 
-生保加入率: ${rate.toFixed(1)}%
+生保加入率：${(s.seiboTotal/s.count).toFixed(1)}%<br>
+
+医保加入率：${(s.medical/s.count*100).toFixed(1)}%<br>
+
+ローン率：${(s.loan/s.count*100).toFixed(1)}%<br>
+
+プレミアム率：${(s.premium/s.count*100).toFixed(1)}%<br>
+
+病院予約率：${(s.hospital/s.count*100).toFixed(1)}%<br>
+
+付帯平均：${Math.round(s.amount/s.count)}円
 
 </div>
-
 <hr>
-
 `;
 
 }
-
 
 staffKPI.innerHTML=html;
 
 }
 
-
-
 function renderHistory(){
 
 let html="";
-
-
-if(data.length===0){
-
-html="履歴なし";
-
-}else{
-
 
 data.forEach((d,i)=>{
 
@@ -296,34 +261,23 @@ html+=`
 
 <div class="historyItem">
 
-担当者: ${d.staff}<br>
+<b>${d.staff}</b><br>
 
-生保: ${d.seibo}%<br>
+生保：${d.seibo}%<br>
 
-医保: ${d.medical?"〇":"×"}<br>
+医保：${d.medical?"〇":"×"}<br>
 
-プレミアム: ${d.premium?"〇":"×"}<br>
+プレミアム：${d.premium?"〇":"×"}<br>
 
-ローン: ${d.loan?"〇":"×"}<br>
+ローン：${d.loan?"〇":"×"}<br>
 
-病院: ${d.hospital?"〇":"×"}<br>
+病院：${d.hospital?"〇":"×"}<br>
 
-付帯: ${d.amount}円<br>
+付帯：${d.amount}円<br>
 
+<button class="editBtn" onclick="edit(${i})">編集</button>
 
-<button class="editBtn" onclick="edit(${i})">
-
-編集
-
-</button>
-
-
-<button class="deleteBtn" onclick="del(${i})">
-
-削除
-
-</button>
-
+<button class="deleteBtn" onclick="del(${i})">削除</button>
 
 </div>
 
@@ -331,31 +285,20 @@ html+=`
 
 });
 
-}
-
-
 history.innerHTML=html;
 
 }
 
-
-
 function edit(i){
 
-const d=data[i];
+let d=data[i];
 
 staff.value=d.staff;
-
 seibo.value=d.seibo;
-
 medical.checked=d.medical;
-
 premium.checked=d.premium;
-
 loan.checked=d.loan;
-
 hospital.checked=d.hospital;
-
 amount.value=d.amount;
 
 editIndex=i;
@@ -364,23 +307,16 @@ window.scrollTo(0,0);
 
 }
 
-
-
 function del(i){
 
-if(confirm("削除しますか？")){
+if(!confirm("削除しますか？"))return;
 
 data.splice(i,1);
 
 save();
-
 renderAll();
 
 }
-
-}
-
-
 
 renderAll();
 
