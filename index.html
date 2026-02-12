@@ -14,15 +14,16 @@ padding:20px;
 background:#f2f4f7;
 }
 
+h2{
+text-align:center;
+margin-bottom:20px;
+}
+
 .card{
 background:white;
 padding:15px;
 margin-top:15px;
 border-radius:10px;
-}
-
-h2{
-text-align:center;
 }
 
 input[type="text"]{
@@ -70,17 +71,14 @@ color:green;
 font-weight:bold;
 }
 
-.warn{
-color:orange;
-font-weight:bold;
-}
-
 </style>
+
 </head>
 
 <body>
 
 <h2>KPIダッシュボード</h2>
+
 
 <div class="card">
 
@@ -91,17 +89,20 @@ font-weight:bold;
 <option value="edogawa">江戸川店</option>
 </select>
 
+
 <label>月</label>
 
 <select id="monthSelect" onchange="changeMonth()">
 </select>
 
+
 <h3>
-販売目標：
-<span id="targetDisplay">0</span>頭
+今月の販売目標頭数：
+<span id="targetDisplay">27</span> 頭
 </h3>
 
 </div>
+
 
 
 <div class="card">
@@ -111,6 +112,7 @@ font-weight:bold;
 <input type="text" id="rate" placeholder="生保率(%)">
 
 <input type="text" id="futai" placeholder="付帯金額">
+
 
 <div class="checkbox-row">
 <input type="checkbox" id="premium">
@@ -127,9 +129,18 @@ font-weight:bold;
 <label>フード定期</label>
 </div>
 
-<button onclick="addContract()">契約追加</button>
+<div class="checkbox-row">
+<input type="checkbox" id="hospital">
+<label>病院予約</label>
+</div>
+
+
+<button onclick="addContract()">
+契約追加
+</button>
 
 </div>
+
 
 
 <div class="card">
@@ -141,25 +152,38 @@ font-weight:bold;
 </div>
 
 
+
 <script>
 
-// 店舗目標設定
+
+// 店舗ごとの目標
 const storeTargets={
+
 adachi:27,
 edogawa:16
+
 };
 
-let currentStore="adachi";
+
+let currentStore="";
 let currentMonth="";
 let targetCount=0;
 
-// 保存キー生成
-function getKey(){
-return "kpi_"+currentStore+"_"+currentMonth;
-}
+
+let salesCount=0;
+let premiumCount=0;
+let iryoCount=0;
+let foodCount=0;
+
+
 
 // 月初期化
 function initMonth(){
+
+const select=
+document.getElementById("monthSelect");
+
+select.innerHTML="";
 
 const now=new Date();
 
@@ -174,47 +198,81 @@ const m=("0"+(d.getMonth()+1)).slice(-2);
 const value=y+"-"+m;
 
 const option=document.createElement("option");
+
 option.value=value;
 option.text=y+"年"+m+"月";
 
-document.getElementById("monthSelect").appendChild(option);
-
 if(i==0){
-currentMonth=value;
+
 option.selected=true;
+currentMonth=value;
+
 }
+
+select.appendChild(option);
 
 }
 
 }
+
+
+
+// 保存キー（店舗＋月で完全分離）
+function getKey(){
+
+return
+"kpi_"+
+currentStore+
+"_"+
+currentMonth;
+
+}
+
+
 
 // 保存
 function saveData(){
 
 const data={
+
 salesCount,
 premiumCount,
 iryoCount,
 foodCount
+
 };
 
-localStorage.setItem(getKey(),JSON.stringify(data));
+localStorage.setItem(
+getKey(),
+JSON.stringify(data)
+);
 
 }
+
+
 
 // 読込
 function loadData(){
 
-const saved=localStorage.getItem(getKey());
+const saved=
+localStorage.getItem(getKey());
 
 if(saved){
 
-const data=JSON.parse(saved);
+const data=
+JSON.parse(saved);
 
-salesCount=data.salesCount||0;
-premiumCount=data.premiumCount||0;
-iryoCount=data.iryoCount||0;
-foodCount=data.foodCount||0;
+salesCount=
+data.salesCount||0;
+
+premiumCount=
+data.premiumCount||0;
+
+iryoCount=
+data.iryoCount||0;
+
+foodCount=
+data.foodCount||0;
 
 }else{
 
@@ -229,25 +287,37 @@ updateStatus();
 
 }
 
+
+
 // 店舗変更
 function changeStore(){
 
-currentStore=document.getElementById("storeSelect").value;
-targetCount=storeTargets[currentStore];
+currentStore=
+document.getElementById("storeSelect").value;
 
-document.getElementById("targetDisplay").innerText=targetCount;
+targetCount=
+storeTargets[currentStore];
+
+document.getElementById("targetDisplay").innerText=
+targetCount;
 
 loadData();
 
 }
+
+
 
 // 月変更
 function changeMonth(){
 
-currentMonth=document.getElementById("monthSelect").value;
+currentMonth=
+document.getElementById("monthSelect").value;
+
 loadData();
 
 }
+
+
 
 // 契約追加
 function addContract(){
@@ -264,37 +334,67 @@ if(document.getElementById("food").checked)
 foodCount++;
 
 saveData();
+
 updateStatus();
 
 }
 
-// 状況更新
+
+
+// 危険判定含む表示
 function updateStatus(){
 
-let remain=targetCount-salesCount;
+let remain=
+targetCount-salesCount;
 
-let premiumRate=salesCount?premiumCount/salesCount*100:0;
-let iryoRate=salesCount?iryoCount/salesCount*100:0;
-let foodRate=salesCount?foodCount/salesCount*100:0;
 
-let premiumStatus=premiumRate>=50?"safe":"danger";
-let iryoStatus=iryoRate>=60?"safe":"danger";
-let foodStatus=foodRate>=60?"safe":"danger";
+let premiumRate=
+salesCount?
+premiumCount/salesCount*100:0;
 
-let needPremium=remain>0?(50*(salesCount+remain)-premiumCount)/remain:0;
 
-document.getElementById("status").innerHTML=`
+let iryoRate=
+salesCount?
+iryoCount/salesCount*100:0;
 
-販売頭数：
-${salesCount} / ${targetCount}
-（残り ${remain}）
+
+let foodRate=
+salesCount?
+foodCount/salesCount*100:0;
+
+
+
+// 必要生保率
+let needPremium=
+remain>0?
+((50*(salesCount+remain))-premiumCount)/remain
+:0;
+
+
+
+let premiumClass=
+premiumRate>=50?"safe":"danger";
+
+let iryoClass=
+iryoRate>=60?"safe":"danger";
+
+let foodClass=
+foodRate>=60?"safe":"danger";
+
+
+
+document.getElementById("status").innerHTML=
+
+`
+販売頭数：${salesCount} / ${targetCount}
+（残り ${remain} 頭）
 
 <br><br>
 
 生保率：
-<span class="${premiumStatus}">
+<span class="${premiumClass}">
 ${premiumRate.toFixed(1)}%
-${premiumStatus=="danger"?"危険！":"安全"}
+${premiumClass=="danger"?"危険！":"安全"}
 </span>
 
 <br>
@@ -305,31 +405,32 @@ ${needPremium.toFixed(1)}%
 <br><br>
 
 医保率：
-<span class="${iryoStatus}">
+<span class="${iryoClass}">
 ${iryoRate.toFixed(1)}%
-${iryoStatus=="danger"?"危険！":"安全"}
+${iryoClass=="danger"?"危険！":"安全"}
 </span>
 
 <br><br>
 
 フード率：
-<span class="${foodStatus}">
+<span class="${foodClass}">
 ${foodRate.toFixed(1)}%
-${foodStatus=="danger"?"危険！":"安全"}
+${foodClass=="danger"?"危険！":"安全"}
 </span>
 
 `;
 
 }
 
-// 初期化
-let salesCount=0;
-let premiumCount=0;
-let iryoCount=0;
-let foodCount=0;
 
+
+// 初期化
 initMonth();
+
+currentStore="adachi";
+
 changeStore();
+
 
 </script>
 
