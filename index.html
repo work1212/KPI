@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html>
 <head>
 <meta charset="UTF-8">
@@ -28,15 +28,16 @@ margin-top:0;
 
 input,select{
 width:100%;
-padding:10px;
+padding:12px;
 margin-top:5px;
 margin-bottom:10px;
 font-size:16px;
+box-sizing:border-box;
 }
 
 button{
 width:100%;
-padding:12px;
+padding:14px;
 background:black;
 color:white;
 border:none;
@@ -61,14 +62,27 @@ padding:10px 0;
 font-size:14px;
 }
 
+
+/* チェックボックス完全修正 */
 .checkbox-row{
 display:flex;
 align-items:center;
-gap:8px;
-margin-top:5px;
-margin-bottom:5px;
+gap:10px;
+margin:8px 0;
+font-size:16px;
 }
 
+.checkbox-row input{
+width:auto;
+transform:scale(1.3);
+}
+
+.checkbox-row span{
+white-space:nowrap;
+}
+
+
+/* タブ */
 .tab{
 display:flex;
 margin-bottom:10px;
@@ -113,11 +127,8 @@ color:white;
 <label>店舗</label>
 
 <select id="storeSelect" onchange="loadData()">
-
 <option value="足立店">足立店</option>
-
 <option value="江戸川店">江戸川店</option>
-
 </select>
 
 
@@ -148,35 +159,34 @@ color:white;
 
 
 
-<div class="checkbox-row">
+<label class="checkbox-row">
 <input type="checkbox" id="medical">
-<label for="medical">医保加入</label>
-</div>
+<span>医保加入</span>
+</label>
 
 
-<div class="checkbox-row">
+<label class="checkbox-row">
 <input type="checkbox" id="premium">
-<label for="premium">プレミアム加入</label>
-</div>
+<span>プレミアム加入</span>
+</label>
 
 
-<div class="checkbox-row">
+<label class="checkbox-row">
 <input type="checkbox" id="loan">
-<label for="loan">ローン利用</label>
-</div>
+<span>ローン利用</span>
+</label>
 
 
-<div class="checkbox-row">
+<label class="checkbox-row">
 <input type="checkbox" id="hospital">
-<label for="hospital">病院予約</label>
-</div>
+<span>病院予約</span>
+</label>
 
 
 
-<label for="futai">付帯金額（円）</label>
+<label>付帯金額（円）</label>
 
-<input
-type="number"
+<input type="number"
 id="futai"
 placeholder="例：30000">
 
@@ -191,31 +201,22 @@ placeholder="例：30000">
 
 
 <div class="card" id="storeKPI">
-
 <h3>店舗KPI</h3>
-
 <div id="storeStatus"></div>
-
 </div>
 
 
 
 <div class="card" id="staffKPI" style="display:none;">
-
 <h3>担当者KPI</h3>
-
 <div id="staffStatus"></div>
-
 </div>
 
 
 
 <div class="card">
-
 <h3>履歴</h3>
-
 <div id="history"></div>
-
 </div>
 
 
@@ -245,17 +246,13 @@ let contracts=[];
 
 
 function key(){
-
 return "kpi_"+storeSelect.value;
-
 }
 
 
 
 function save(){
-
 localStorage.setItem(key(),JSON.stringify(contracts));
-
 }
 
 
@@ -275,34 +272,24 @@ updateStaffList();
 
 function addContract(){
 
-const staff=
-staffInput.value;
+const staff=staffInput.value;
 
 if(!staff){
-
 alert("担当者名を入力してください");
-
 return;
-
 }
 
-const months=
-Number(insurance.value);
+const months=Number(insurance.value);
 
 contracts.push({
 
-staff:staff,
-
-months:months,
-
+staff,
+months,
 rate:RATE_MAP[months],
 
 medical:medical.checked,
-
 premium:premium.checked,
-
 loan:loan.checked,
-
 hospital:hospital.checked,
 
 futai:Number(futai.value)||0,
@@ -345,11 +332,8 @@ if(c.rate>0) join++;
 rate+=c.rate;
 
 if(c.medical) medicalC++;
-
 if(c.premium) premiumC++;
-
 if(c.loan) loanC++;
-
 if(c.hospital) hospitalC++;
 
 futaiTotal+=c.futai;
@@ -370,14 +354,11 @@ const futaiAvg=count?futaiTotal/count:0;
 
 function need(current,targetRate){
 
-const targetTotal=
-Math.ceil(target*targetRate/100);
+const targetTotal=Math.ceil(target*targetRate/100);
 
-const needCount=
-targetTotal-current;
+const needCount=targetTotal-current;
 
-const needRate=
-remain?needCount/remain*100:0;
+const needRate=remain?needCount/remain*100:0;
 
 return `${needCount}件（${needRate.toFixed(1)}%）`;
 
@@ -493,16 +474,13 @@ ${c.date}<br>
 
 付帯：${c.futai.toLocaleString()}円<br>
 
-<button onclick="del(${i})">
-削除
-</button>
+<button onclick="del(${i})">削除</button>
 
 </div>
 
 `;
 
 });
-
 
 
 updateStaffKPI();
@@ -530,9 +508,7 @@ const names=[...new Set(contracts.map(c=>c.staff))];
 staffList.innerHTML="";
 
 names.forEach(n=>{
-
 staffList.innerHTML+=`<option value="${n}">`;
-
 });
 
 }
@@ -547,16 +523,13 @@ const staffNames=[...new Set(contracts.map(c=>c.staff))];
 
 staffNames.forEach(name=>{
 
-const list=
-contracts.filter(c=>c.staff==name);
+const list=contracts.filter(c=>c.staff==name);
 
 const count=list.length;
 
-const join=
-list.filter(c=>c.rate>0).length;
+const join=list.filter(c=>c.rate>0).length;
 
-const rate=
-list.reduce((a,b)=>a+b.rate,0)/count||0;
+const rate=list.reduce((a,b)=>a+b.rate,0)/count||0;
 
 html+=`
 
