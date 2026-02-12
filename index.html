@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>KPIダッシュボード</title>
 
 <style>
@@ -53,26 +54,18 @@ margin-bottom:8px;
 width:auto;
 }
 
-.green{
-color:green;
-font-weight:bold;
-}
-
-.red{
-color:red;
-font-weight:bold;
-}
+.green{color:green;font-weight:bold;}
+.red{color:red;font-weight:bold;}
 
 .history{
 border-top:1px solid #ddd;
 padding:8px 0;
-font-size:14px;
 }
 
 .smallBtn{
 background:#666;
-margin-top:5px;
 padding:5px;
+margin-top:5px;
 font-size:14px;
 }
 
@@ -80,6 +73,12 @@ font-size:14px;
 border-top:1px solid #ddd;
 padding-top:5px;
 margin-top:5px;
+}
+
+.need{
+font-size:14px;
+color:#555;
+margin-left:10px;
 }
 
 </style>
@@ -139,10 +138,12 @@ margin-top:5px;
 </div>
 
 
+
 <div class="card">
 <h2>店舗KPI</h2>
 <div id="kpi"></div>
 </div>
+
 
 
 <div class="card">
@@ -151,10 +152,12 @@ margin-top:5px;
 </div>
 
 
+
 <div class="card">
 <h2>履歴</h2>
 <div id="history"></div>
 </div>
+
 
 
 <script>
@@ -162,6 +165,16 @@ margin-top:5px;
 const goals={
 足立店:27,
 江戸川店:16
+};
+
+const targets={
+seihorate:90,
+seihomoney:30,
+medical:90,
+loan:25,
+premium:100,
+hospital:100,
+futai:30000
 };
 
 let data=[];
@@ -172,28 +185,45 @@ return "kpi_"+shop.value;
 }
 
 function rate(m){
-return {
+
+return{
 0:0,1:10,3:15,6:20,12:25,24:30,36:35,60:40,100:50
 }[m];
+
 }
 
+
 function load(){
+
 data=JSON.parse(localStorage.getItem(key()))||[];
+
 update();
+
 }
+
 
 function save(){
 
 const obj={
+
 date:new Date().toLocaleString(),
+
 staff:staff.value||"未入力",
+
 months:Number(months.value),
+
 rate:rate(Number(months.value)),
+
 medical:medical.checked,
+
 premium:premium.checked,
+
 loan:loan.checked,
+
 hospital:hospital.checked,
+
 futai:Number(futai.value)||0
+
 };
 
 if(editIndex==-1)
@@ -206,9 +236,11 @@ editIndex=-1;
 localStorage.setItem(key(),JSON.stringify(data));
 
 clear();
+
 update();
 
 }
+
 
 function edit(i){
 
@@ -224,7 +256,12 @@ futai.value=d.futai;
 
 editIndex=i;
 
+window.scrollTo({top:0,behavior:"smooth"});
+
+alert("修正して『契約追加 / 更新』を押してください");
+
 }
+
 
 function del(i){
 
@@ -235,6 +272,7 @@ localStorage.setItem(key(),JSON.stringify(data));
 update();
 
 }
+
 
 function clear(){
 
@@ -248,59 +286,155 @@ futai.value="";
 
 }
 
-function percent(val,goal){
-return `<span class="${val>=goal?"green":"red"}">${val.toFixed(1)}%</span>`;
+
+
+function color(v,t){
+
+return `<span class="${v>=t?"green":"red"}">${v.toFixed(1)}%</span>`;
+
 }
+
+
 
 function update(){
 
 const goal=goals[shop.value];
+
 const count=data.length;
+
+const remain=goal-count;
 
 const seihos=data.filter(x=>x.months>0).length;
 const seihorate=count?seihos/count*100:0;
+
 const seihomoney=count?data.reduce((a,b)=>a+b.rate,0)/count:0;
-const medicalrate=count?data.filter(x=>x.medical).length/count*100:0;
-const loanrate=count?data.filter(x=>x.loan).length/count*100:0;
-const premiumrate=count?data.filter(x=>x.premium).length/count*100:0;
-const hospitalrate=count?data.filter(x=>x.hospital).length/count*100:0;
-const futaiavg=count?data.reduce((a,b)=>a+b.futai,0)/count:0;
+
+const medical=count?data.filter(x=>x.medical).length/count*100:0;
+
+const loan=count?data.filter(x=>x.loan).length/count*100:0;
+
+const premium=count?data.filter(x=>x.premium).length/count*100:0;
+
+const hospital=count?data.filter(x=>x.hospital).length/count*100:0;
+
+const futai=count?data.reduce((a,b)=>a+b.futai,0)/count:0;
+
+
+
+function needRate(current,total,target){
+
+if(remain<=0)return "達成";
+
+const needed=(target*goal-current*total)/remain;
+
+return needed>0?`残り必要平均 ${needed.toFixed(1)}%`:"達成";
+
+}
+
+function needYen(current,total,target){
+
+if(remain<=0)return "達成";
+
+const needed=(target*goal-current*total)/remain;
+
+return needed>0?`残り必要平均 ${Math.round(needed)}円`:"達成";
+
+}
+
+
 
 kpi.innerHTML=`
-販売進捗：${count}/${goal}（残り${goal-count}）<br><br>
-生保加入率：${percent(seihorate,90)}<br>
-生保金額率：${percent(seihomoney,30)}<br>
-医保加入率：${percent(medicalrate,90)}<br>
-ローン率：${percent(loanrate,25)}<br>
-プレミアム率：${percent(premiumrate,100)}<br>
-病院予約率：${percent(hospitalrate,100)}<br>
-付帯平均：<span class="${futaiavg>=30000?"green":"red"}">${Math.round(futaiavg)}円</span>
+
+販売進捗：${count}/${goal}（残り${remain}）<br><br>
+
+生保加入率：${color(seihorate,targets.seihorate)}
+<span class="need">${needRate(seihos,count,targets.seihorate)}</span><br>
+
+生保金額率：${color(seihomoney,targets.seihomoney)}
+<span class="need">${needRate(seihomoney,count,targets.seihomoney)}</span><br>
+
+医保加入率：${color(medical,targets.medical)}
+<span class="need">${needRate(medical,count,targets.medical)}</span><br>
+
+ローン率：${color(loan,targets.loan)}
+<span class="need">${needRate(loan,count,targets.loan)}</span><br>
+
+プレミアム率：${color(premium,targets.premium)}
+<span class="need">${needRate(premium,count,targets.premium)}</span><br>
+
+病院予約率：${color(hospital,targets.hospital)}
+<span class="need">${needRate(hospital,count,targets.hospital)}</span><br>
+
+付帯平均：
+<span class="${futai>=targets.futai?"green":"red"}">${Math.round(futai)}円</span>
+<span class="need">${needYen(futai,count,targets.futai)}</span>
+
 `;
 
-let staffMap={};
+
+
+/* 担当者KPI */
+
+let map={};
 
 data.forEach(d=>{
-if(!staffMap[d.staff]) staffMap[d.staff]=[];
-staffMap[d.staff].push(d);
+if(!map[d.staff])map[d.staff]=[];
+map[d.staff].push(d);
 });
 
 staffKpi.innerHTML="";
 
-for(let name in staffMap){
+for(let name in map){
 
-let list=staffMap[name];
+let list=map[name];
+
 let c=list.length;
-let s=list.filter(x=>x.months>0).length;
-let r=c?s/c*100:0;
+
+let sr=list.filter(x=>x.months>0).length/c*100;
+
+let sm=list.reduce((a,b)=>a+b.rate,0)/c;
+
+let md=list.filter(x=>x.medical).length/c*100;
+
+let ln=list.filter(x=>x.loan).length/c*100;
+
+let pr=list.filter(x=>x.premium).length/c*100;
+
+let hs=list.filter(x=>x.hospital).length/c*100;
+
+let ft=list.reduce((a,b)=>a+b.futai,0)/c;
 
 staffKpi.innerHTML+=`
+
 <div class="staffBox">
+
 <b>${name}</b><br>
+
 販売：${c}<br>
-生保加入率：${r.toFixed(1)}%
+
+生保加入率：${sr.toFixed(1)}%<br>
+
+生保金額率：${sm.toFixed(1)}%<br>
+
+医保加入率：${md.toFixed(1)}%<br>
+
+ローン率：${ln.toFixed(1)}%<br>
+
+プレミアム率：${pr.toFixed(1)}%<br>
+
+病院予約率：${hs.toFixed(1)}%<br>
+
+付帯平均：${Math.round(ft)}円
+
 </div>
+
 `;
+
 }
+
+
+
+/* 履歴 */
 
 history.innerHTML="";
 
@@ -309,22 +443,37 @@ data.slice().reverse().forEach((d,i)=>{
 let real=data.length-1-i;
 
 history.innerHTML+=`
+
 <div class="history">
+
 ${d.date}<br>
+
 ${d.staff}<br>
+
 生保:${d.months}ヶ月　
+
 医保:${d.medical?"〇":"×"}　
+
 プレミアム:${d.premium?"〇":"×"}　
+
 ローン:${d.loan?"〇":"×"}　
+
 病院:${d.hospital?"〇":"×"}<br>
+
 付帯:${d.futai}円<br>
+
 <button class="smallBtn" onclick="edit(${real})">編集</button>
+
 <button class="smallBtn" onclick="del(${real})">削除</button>
+
 </div>
+
 `;
+
 });
 
 }
+
 
 load();
 
