@@ -32,7 +32,7 @@ font-size:16px;
 
 .historyItem{
 border-bottom:1px solid #ddd;
-padding:8px 0;
+padding:10px 0;
 }
 
 .editBtn{
@@ -47,6 +47,12 @@ margin-top:5px;
 
 .good{color:green;}
 .bad{color:red;}
+
+.small{
+font-size:13px;
+color:#666;
+}
+
 </style>
 
 </head>
@@ -88,10 +94,12 @@ margin-top:5px;
 <div id="shopKPI"></div>
 </div>
 
+
 <div class="card">
 <h3>担当者KPI</h3>
 <div id="staffKPI"></div>
 </div>
+
 
 <div class="card">
 <h3>履歴</h3>
@@ -101,38 +109,32 @@ margin-top:5px;
 
 <script>
 
-let data=JSON.parse(localStorage.getItem("kpiData")||"[]");
-let editIndex=null;
+let data = JSON.parse(localStorage.getItem("kpiData") || "[]");
+let editIndex = null;
 
-const TARGET=27;
+const TARGET = 27;
 
 function save(){
-localStorage.setItem("kpiData",JSON.stringify(data));
+localStorage.setItem("kpiData", JSON.stringify(data));
 }
 
 function add(){
 
 const item={
-staff:staff.value||"未入力",
-seibo:Number(seibo.value),
-medical:medical.checked,
-premium:premium.checked,
-loan:loan.checked,
-hospital:hospital.checked,
-amount:Number(amount.value)||0
+staff: staff.value || "未入力",
+seibo: Number(seibo.value),
+medical: medical.checked,
+premium: premium.checked,
+loan: loan.checked,
+hospital: hospital.checked,
+amount: Number(amount.value) || 0
 };
 
-if(editIndex!==null){
-
-// ★ 上書き更新（編集）
-data[editIndex]=item;
-editIndex=null;
-
+if(editIndex !== null){
+data[editIndex] = item;
+editIndex = null;
 }else{
-
-// ★ 新規追加
 data.push(item);
-
 }
 
 save();
@@ -159,17 +161,32 @@ renderHistory();
 
 function renderShop(){
 
-let total=data.length;
+let total = data.length;
 
-let seiboCount=data.filter(d=>d.seibo>0).length;
-let seiboRate=(seiboCount/total*100)||0;
+let seiboCount = data.filter(d=>d.seibo>0).length;
+let seiboRate = total ? seiboCount/total*100 : 0;
+
+let remain = TARGET - total;
+
+let remainNeed = remain>0
+? ((TARGET*0.9 - seiboCount)/remain*100)
+: 0;
 
 let html=`
-販売進捗: ${total}/${TARGET}<br>
-生保加入率: <span class="${seiboRate>=90?'good':'bad'}">${seiboRate.toFixed(1)}%</span>
+販売進捗: ${total}/${TARGET} (残り${remain})<br>
+
+生保加入率:
+<span class="${seiboRate>=90?'good':'bad'}">
+${seiboRate.toFixed(1)}%
+</span>
+<br>
+
+<span class="small">
+残り必要平均 ${remainNeed>0?remainNeed.toFixed(1):0}%
+</span>
 `;
 
-shopKPI.innerHTML=html;
+shopKPI.innerHTML = html;
 
 }
 
@@ -178,23 +195,42 @@ function renderStaff(){
 let map={};
 
 data.forEach(d=>{
-if(!map[d.staff])map[d.staff]={count:0,seibo:0};
+
+if(!map[d.staff]){
+map[d.staff]={
+count:0,
+seibo:0
+};
+}
+
 map[d.staff].count++;
-if(d.seibo>0)map[d.staff].seibo++;
+
+if(d.seibo>0){
+map[d.staff].seibo++;
+}
+
 });
 
 let html="";
 
 for(let name in map){
 
-let rate=(map[name].seibo/map[name].count*100)||0;
+let obj=map[name];
+
+let rate=obj.count?obj.seibo/obj.count*100:0;
 
 html+=`
 <div>
+
 <b>${name}</b><br>
-販売:${map[name].count}<br>
+
+販売:${obj.count}<br>
+
 生保加入率:${rate.toFixed(1)}%
-</div><hr>
+
+</div>
+
+<hr>
 `;
 
 }
@@ -205,6 +241,11 @@ staffKPI.innerHTML=html;
 
 function renderHistory(){
 
+if(data.length===0){
+history.innerHTML="履歴なし";
+return;
+}
+
 let html="";
 
 data.forEach((d,i)=>{
@@ -214,24 +255,27 @@ html+=`
 
 <b>${d.staff}</b><br>
 
-生保率: ${d.seibo}%<br>
-医保: ${d.medical?"〇":"×"}　
-プレミアム: ${d.premium?"〇":"×"}　
-ローン: ${d.loan?"〇":"×"}　
-病院: ${d.hospital?"〇":"×"}<br>
+生保:${d.seibo}%<br>
+医保:${d.medical?"〇":"×"}<br>
+プレミアム:${d.premium?"〇":"×"}<br>
+ローン:${d.loan?"〇":"×"}<br>
+病院:${d.hospital?"〇":"×"}<br>
+付帯:${d.amount}円<br>
 
-付帯金額: ${d.amount}円<br>
+<button class="editBtn" onclick="edit(${i})">
+編集
+</button>
 
-<button class="editBtn" onclick="edit(${i})">編集</button>
-
-<button class="deleteBtn" onclick="del(${i})">削除</button>
+<button class="deleteBtn" onclick="del(${i})">
+削除
+</button>
 
 </div>
 `;
 
 });
 
-history.innerHTML=html;
+history.innerHTML = html;
 
 }
 
@@ -249,15 +293,20 @@ amount.value=d.amount;
 
 editIndex=i;
 
-// ★ 編集モード視覚フィードバック
-window.scrollTo({top:0,behavior:"smooth"});
+window.scrollTo(0,0);
 
 }
 
 function del(i){
+
+if(!confirm("削除しますか？")) return;
+
 data.splice(i,1);
+
 save();
+
 renderAll();
+
 }
 
 renderAll();
