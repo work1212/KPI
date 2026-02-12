@@ -6,6 +6,7 @@
 <title>KPIダッシュボード</title>
 
 <style>
+
 body{
 font-family:sans-serif;
 background:#f2f2f2;
@@ -48,15 +49,11 @@ margin-top:5px;
 .good{color:green;}
 .bad{color:red;}
 
-.small{
-font-size:13px;
-color:#666;
-}
-
 </style>
 
 </head>
 <body>
+
 
 <div class="card">
 
@@ -89,6 +86,7 @@ color:#666;
 </div>
 
 
+
 <div class="card">
 <h3>店舗KPI</h3>
 <div id="shopKPI"></div>
@@ -107,188 +105,257 @@ color:#666;
 </div>
 
 
+
 <script>
 
-let data = JSON.parse(localStorage.getItem("kpiData") || "[]");
-let editIndex = null;
+let data=JSON.parse(localStorage.getItem("kpiData")||"[]");
 
-const TARGET = 27;
+let editIndex=null;
+
+const TARGET=27;
+
+
 
 function save(){
-localStorage.setItem("kpiData", JSON.stringify(data));
+
+localStorage.setItem("kpiData",JSON.stringify(data));
+
 }
+
+
 
 function add(){
 
 const item={
-staff: staff.value || "未入力",
-seibo: Number(seibo.value),
-medical: medical.checked,
-premium: premium.checked,
-loan: loan.checked,
-hospital: hospital.checked,
-amount: Number(amount.value) || 0
+
+staff:staff.value||"未入力",
+
+seibo:Number(seibo.value),
+
+medical:medical.checked,
+
+premium:premium.checked,
+
+loan:loan.checked,
+
+hospital:hospital.checked,
+
+amount:Number(amount.value)||0
+
 };
 
-if(editIndex !== null){
-data[editIndex] = item;
-editIndex = null;
+
+if(editIndex!==null){
+
+data[editIndex]=item;
+
+editIndex=null;
+
 }else{
+
 data.push(item);
+
 }
 
+
 save();
+
 renderAll();
+
 clearForm();
 
 }
 
+
+
 function clearForm(){
+
 staff.value="";
+
 seibo.value=0;
+
 medical.checked=false;
+
 premium.checked=false;
+
 loan.checked=false;
+
 hospital.checked=false;
+
 amount.value="";
+
 }
 
+
+
 function renderAll(){
+
 renderShop();
+
 renderStaff();
+
 renderHistory();
+
 }
+
+
 
 function renderShop(){
 
-let total = data.length;
+let total=data.length;
 
-let seiboCount = data.filter(d=>d.seibo>0).length;
-let seiboRate = total ? seiboCount/total*100 : 0;
+let seiboCount=data.filter(d=>d.seibo>0).length;
 
-let remain = TARGET - total;
-
-let remainNeed = remain>0
-? ((TARGET*0.9 - seiboCount)/remain*100)
-: 0;
+let seiboRate=total?seiboCount/total*100:0;
 
 let html=`
-販売進捗: ${total}/${TARGET} (残り${remain})<br>
 
-生保加入率:
-<span class="${seiboRate>=90?'good':'bad'}">
-${seiboRate.toFixed(1)}%
-</span>
-<br>
+販売進捗: ${total}/${TARGET}<br>
 
-<span class="small">
-残り必要平均 ${remainNeed>0?remainNeed.toFixed(1):0}%
-</span>
+生保加入率: <span class="${seiboRate>=90?'good':'bad'}">${seiboRate.toFixed(1)}%</span>
+
 `;
 
-shopKPI.innerHTML = html;
+shopKPI.innerHTML=html;
 
 }
+
+
 
 function renderStaff(){
 
 let map={};
 
+
 data.forEach(d=>{
 
 if(!map[d.staff]){
-map[d.staff]={
-count:0,
-seibo:0
-};
+
+map[d.staff]={count:0,seibo:0};
+
 }
 
 map[d.staff].count++;
 
 if(d.seibo>0){
+
 map[d.staff].seibo++;
+
 }
 
 });
 
+
 let html="";
+
 
 for(let name in map){
 
-let obj=map[name];
-
-let rate=obj.count?obj.seibo/obj.count*100:0;
+let rate=map[name].count?map[name].seibo/map[name].count*100:0;
 
 html+=`
+
 <div>
 
 <b>${name}</b><br>
 
-販売:${obj.count}<br>
+販売: ${map[name].count}<br>
 
-生保加入率:${rate.toFixed(1)}%
+生保加入率: ${rate.toFixed(1)}%
 
 </div>
 
 <hr>
+
 `;
 
 }
+
 
 staffKPI.innerHTML=html;
 
 }
 
+
+
 function renderHistory(){
 
-if(data.length===0){
-history.innerHTML="履歴なし";
-return;
-}
-
 let html="";
+
+
+if(data.length===0){
+
+html="履歴なし";
+
+}else{
+
 
 data.forEach((d,i)=>{
 
 html+=`
+
 <div class="historyItem">
 
-<b>${d.staff}</b><br>
+担当者: ${d.staff}<br>
 
-生保:${d.seibo}%<br>
-医保:${d.medical?"〇":"×"}<br>
-プレミアム:${d.premium?"〇":"×"}<br>
-ローン:${d.loan?"〇":"×"}<br>
-病院:${d.hospital?"〇":"×"}<br>
-付帯:${d.amount}円<br>
+生保: ${d.seibo}%<br>
+
+医保: ${d.medical?"〇":"×"}<br>
+
+プレミアム: ${d.premium?"〇":"×"}<br>
+
+ローン: ${d.loan?"〇":"×"}<br>
+
+病院: ${d.hospital?"〇":"×"}<br>
+
+付帯: ${d.amount}円<br>
+
 
 <button class="editBtn" onclick="edit(${i})">
+
 編集
+
 </button>
+
 
 <button class="deleteBtn" onclick="del(${i})">
+
 削除
+
 </button>
 
+
 </div>
+
 `;
 
 });
 
-history.innerHTML = html;
+}
+
+
+history.innerHTML=html;
 
 }
+
+
 
 function edit(i){
 
 const d=data[i];
 
 staff.value=d.staff;
+
 seibo.value=d.seibo;
+
 medical.checked=d.medical;
+
 premium.checked=d.premium;
+
 loan.checked=d.loan;
+
 hospital.checked=d.hospital;
+
 amount.value=d.amount;
 
 editIndex=i;
@@ -297,9 +364,11 @@ window.scrollTo(0,0);
 
 }
 
+
+
 function del(i){
 
-if(!confirm("削除しますか？")) return;
+if(confirm("削除しますか？")){
 
 data.splice(i,1);
 
@@ -308,6 +377,10 @@ save();
 renderAll();
 
 }
+
+}
+
+
 
 renderAll();
 
