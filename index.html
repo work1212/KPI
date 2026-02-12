@@ -1,322 +1,356 @@
+
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KPIダッシュボード</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
 
 body{
-font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;
+font-family:-apple-system,BlinkMacSystemFont;
+background:#f4f4f4;
 margin:0;
-padding:15px;
-background:#f2f4f7;
+padding:20px;
 }
 
 .card{
 background:white;
-padding:15px;
-margin-bottom:15px;
-border-radius:10px;
+padding:16px;
+margin-bottom:16px;
+border-radius:12px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+h2{
+margin-top:0;
+}
+
+label{
+display:block;
+margin-top:10px;
 }
 
 input,select{
 width:100%;
-padding:12px;
-margin:5px 0 10px 0;
-font-size:16px;
+padding:10px;
+margin-top:4px;
+border-radius:8px;
+border:1px solid #ccc;
+box-sizing:border-box;
+}
+
+.checkbox{
+display:flex;
+align-items:center;
+gap:8px;
+margin-top:10px;
 }
 
 button{
 width:100%;
 padding:14px;
+margin-top:12px;
 background:black;
 color:white;
 border:none;
-border-radius:8px;
+border-radius:10px;
 font-size:16px;
-margin-top:5px;
 }
 
-.history{
-border-bottom:1px solid #eee;
-padding:10px 0;
-font-size:14px;
+.green{
+color:green;
+font-weight:bold;
 }
 
-.small-btn{
+.red{
+color:red;
+font-weight:bold;
+}
+
+.historyItem{
+border-bottom:1px solid #ddd;
+padding:8px 0;
+}
+
+.smallBtn{
 width:auto;
-padding:6px 10px;
-font-size:14px;
-margin-right:5px;
+padding:4px 8px;
+margin-right:6px;
+font-size:12px;
 }
-
-.safe{color:green;font-weight:bold;}
-.danger{color:red;font-weight:bold;}
 
 </style>
-
 </head>
-
 <body>
+
+<div class="card">
 
 <h2>KPIダッシュボード</h2>
 
-<div class="card">
-
 <label>店舗</label>
-
-<select id="storeSelect" onchange="loadData()">
-<option value="足立店">足立店</option>
-<option value="江戸川店">江戸川店</option>
+<select id="store" onchange="loadData()">
+<option>足立店</option>
+<option>江戸川店</option>
 </select>
 
 <label>担当者（フルネーム）</label>
-<input type="text" id="staffInput">
+<input id="staff">
 
 <label>生保期間</label>
-
-<select id="insurance">
+<select id="period">
 <option value="0">未加入</option>
-<option value="1">1ヶ月</option>
-<option value="3">3ヶ月</option>
-<option value="6">6ヶ月</option>
-<option value="12">12ヶ月</option>
-<option value="24">24ヶ月</option>
-<option value="36">36ヶ月</option>
-<option value="60">60ヶ月</option>
-<option value="100">100ヶ月</option>
+<option value="10">1ヶ月</option>
+<option value="15">3ヶ月</option>
+<option value="20">6ヶ月</option>
+<option value="25">12ヶ月</option>
+<option value="30">24ヶ月</option>
+<option value="35">36ヶ月</option>
+<option value="40">60ヶ月</option>
+<option value="50">100ヶ月</option>
 </select>
 
-<label><input type="checkbox" id="medical"> 医保加入</label>
-<label><input type="checkbox" id="premium"> プレミアム加入</label>
-<label><input type="checkbox" id="loan"> ローン</label>
-<label><input type="checkbox" id="hospital"> 病院予約</label>
+<div class="checkbox">
+<input type="checkbox" id="medical">
+<label for="medical">医保加入</label>
+</div>
+
+<div class="checkbox">
+<input type="checkbox" id="premium">
+<label for="premium">プレミアム加入</label>
+</div>
+
+<div class="checkbox">
+<input type="checkbox" id="loan">
+<label for="loan">ローン利用</label>
+</div>
+
+<div class="checkbox">
+<input type="checkbox" id="hospital">
+<label for="hospital">病院予約</label>
+</div>
 
 <label>付帯金額（円）</label>
-<input type="number" id="futai">
+<input id="amount">
 
-<button id="mainButton" onclick="addOrUpdate()">契約追加</button>
+<button onclick="addOrUpdate()">契約追加</button>
 
 </div>
 
 
 <div class="card">
-<h3>店舗KPI</h3>
-<div id="storeStatus"></div>
+<h2>店舗KPI</h2>
+<div id="kpi"></div>
 </div>
 
 
 <div class="card">
-<h3>履歴</h3>
+<h2>履歴</h2>
 <div id="history"></div>
 </div>
 
 
 <script>
 
-const TARGET={
-足立店:27,
-江戸川店:16
-};
+let editIndex = -1;
 
-const RATE_MAP={
-0:0,1:10,3:15,6:20,12:25,24:30,36:35,60:40,100:50
-};
-
-let contracts=[];
-let editIndex=-1;
-
-
-// 保存キー
 function key(){
-return "kpi_"+storeSelect.value;
+return "kpi_"+document.getElementById("store").value;
 }
 
-
-// 保存
-function save(){
-localStorage.setItem(key(),JSON.stringify(contracts));
+function getData(){
+return JSON.parse(localStorage.getItem(key()) || "[]");
 }
 
-
-// 読込
-function loadData(){
-
-contracts=
-JSON.parse(localStorage.getItem(key())||"[]");
-
-update();
-
+function saveData(data){
+localStorage.setItem(key(), JSON.stringify(data));
 }
 
-
-// 追加または更新
 function addOrUpdate(){
 
-const staff=staffInput.value;
+let data = getData();
 
-if(!staff){
-alert("担当者名を入力してください");
-return;
-}
+let obj = {
 
-const months=Number(insurance.value);
-
-const data={
-
-staff,
-months,
-rate:RATE_MAP[months],
-
+staff:staff.value,
+period:Number(period.value),
 medical:medical.checked,
 premium:premium.checked,
 loan:loan.checked,
 hospital:hospital.checked,
-
-futai:Number(futai.value)||0,
-
-date:new Date().toLocaleString()
+amount:Number(amount.value)||0
 
 };
 
+if(editIndex==-1){
 
-// 編集
-if(editIndex>=0){
+data.push(obj);
 
-contracts[editIndex]=data;
+}else{
 
+data[editIndex]=obj;
 editIndex=-1;
 
-mainButton.textContent="契約追加";
-
-}
-else{
-
-contracts.push(data);
-
 }
 
-
-save();
+saveData(data);
 
 clearForm();
-
-update();
-
-}
-
-
-// 編集開始
-function editContract(index){
-
-const c=contracts[index];
-
-staffInput.value=c.staff;
-insurance.value=c.months;
-medical.checked=c.medical;
-premium.checked=c.premium;
-loan.checked=c.loan;
-hospital.checked=c.hospital;
-futai.value=c.futai;
-
-editIndex=index;
-
-mainButton.textContent="更新する";
+loadData();
 
 }
 
 
-// 削除
-function deleteContract(index){
-
-if(!confirm("削除しますか？")) return;
-
-contracts.splice(index,1);
-
-save();
-
-update();
-
-}
-
-
-// フォームクリア
 function clearForm(){
 
-staffInput.value="";
-insurance.value="0";
+staff.value="";
+period.value="0";
 medical.checked=false;
 premium.checked=false;
 loan.checked=false;
 hospital.checked=false;
-futai.value="";
+amount.value="";
 
 }
 
 
-// 更新
-function update(){
+function editItem(i){
 
-const target=TARGET[storeSelect.value];
+let d=getData()[i];
 
-const count=contracts.length;
+staff.value=d.staff;
+period.value=d.period;
+medical.checked=d.medical;
+premium.checked=d.premium;
+loan.checked=d.loan;
+hospital.checked=d.hospital;
+amount.value=d.amount;
 
-const remain=target-count;
+editIndex=i;
 
-const join=contracts.filter(c=>c.rate>0).length;
-
-const joinRate=count?join/count*100:0;
+}
 
 
-storeStatus.innerHTML=`
+function deleteItem(i){
 
-販売進捗：${count}/${target}（残り${remain}）
+let data=getData();
+data.splice(i,1);
+saveData(data);
+loadData();
+
+}
+
+
+function loadData(){
+
+let data=getData();
+
+let sales=data.length;
+
+let seihos=data.filter(x=>x.period>0).length;
+let seihoRate=sales?((seihos/sales)*100).toFixed(1):0;
+
+let seihoAmountRate=sales?
+(data.reduce((a,b)=>a+b.period,0)/sales).toFixed(1):0;
+
+let medicalRate=sales?
+((data.filter(x=>x.medical).length/sales)*100).toFixed(1):0;
+
+let avgAmount=sales?
+Math.round(data.reduce((a,b)=>a+b.amount,0)/sales):0;
+
+let loanRate=sales?
+((data.filter(x=>x.loan).length/sales)*100).toFixed(1):0;
+
+let premiumRate=sales?
+((data.filter(x=>x.premium).length/sales)*100).toFixed(1):0;
+
+let hospitalRate=sales?
+((data.filter(x=>x.hospital).length/sales)*100).toFixed(1):0;
+
+kpi.innerHTML=`
+
+販売進捗：${sales}/27（残り${27-sales}）
 
 <br><br>
 
 生保加入率：
+<span class="${seihoRate>=90?"green":"red"}">
+${seihoRate}%
+</span>
 
-<span class="${joinRate>=90?'safe':'danger'}">
-${joinRate.toFixed(1)}%
+<br>
+
+生保金額率：
+<span class="${seihoAmountRate>=30?"green":"red"}">
+${seihoAmountRate}%
+</span>
+
+<br>
+
+医保加入率：
+<span class="${medicalRate>=90?"green":"red"}">
+${medicalRate}%
+</span>
+
+<br>
+
+付帯平均：
+<span class="${avgAmount>=30000?"green":"red"}">
+${avgAmount}円
+</span>
+
+<br>
+
+ローン率：
+<span class="${loanRate>=25?"green":"red"}">
+${loanRate}%
+</span>
+
+<br>
+
+プレミアム率：
+<span class="${premiumRate>=100?"green":"red"}">
+${premiumRate}%
+</span>
+
+<br>
+
+病院予約率：
+<span class="${hospitalRate>=100?"green":"red"}">
+${hospitalRate}%
 </span>
 
 `;
 
-
-// 履歴表示
-
 history.innerHTML="";
 
-contracts.slice().reverse().forEach((c,i)=>{
-
-const index=contracts.length-1-i;
+data.forEach((d,i)=>{
 
 history.innerHTML+=`
 
-<div class="history">
+<div class="historyItem">
 
-${c.date}<br>
+${d.staff}
 
-担当者：${c.staff}<br>
+生保:${d.period}%
 
-生保：${c.months}ヶ月（${c.rate}%）<br>
+医保:${d.medical?"〇":"×"}
 
-医保：${c.medical?"〇":"×"}　
-プレミアム：${c.premium?"〇":"×"}　
-ローン：${c.loan?"〇":"×"}　
-病院予約：${c.hospital?"〇":"×"}<br>
+プレ:${d.premium?"〇":"×"}
 
-付帯：${c.futai.toLocaleString()}円<br>
+ローン:${d.loan?"〇":"×"}
 
-<button class="small-btn" onclick="editContract(${index})">
-編集
-</button>
+病院:${d.hospital?"〇":"×"}
 
-<button class="small-btn" onclick="deleteContract(${index})">
-削除
-</button>
+付帯:${d.amount}円
+
+<br>
+
+<button class="smallBtn" onclick="editItem(${i})">編集</button>
+
+<button class="smallBtn" onclick="deleteItem(${i})">削除</button>
 
 </div>
 
