@@ -76,6 +76,12 @@ padding:5px;
 font-size:14px;
 }
 
+.staffBox{
+border-top:1px solid #ddd;
+padding-top:5px;
+margin-top:5px;
+}
+
 </style>
 </head>
 
@@ -84,7 +90,6 @@ font-size:14px;
 <div class="card">
 
 <label>店舗</label>
-
 <select id="shop" onchange="load()">
 <option value="足立店">足立店</option>
 <option value="江戸川店">江戸川店</option>
@@ -94,7 +99,6 @@ font-size:14px;
 <input id="staff">
 
 <label>生保期間</label>
-
 <select id="months">
 <option value="0">未加入</option>
 <option value="1">1ヶ月</option>
@@ -136,20 +140,20 @@ font-size:14px;
 
 
 <div class="card">
-
 <h2>店舗KPI</h2>
-
 <div id="kpi"></div>
-
 </div>
 
 
 <div class="card">
+<h2>担当者KPI</h2>
+<div id="staffKpi"></div>
+</div>
 
+
+<div class="card">
 <h2>履歴</h2>
-
 <div id="history"></div>
-
 </div>
 
 
@@ -167,53 +171,29 @@ function key(){
 return "kpi_"+shop.value;
 }
 
-function rate(months){
-
-const table={
-0:0,
-1:10,
-3:15,
-6:20,
-12:25,
-24:30,
-36:35,
-60:40,
-100:50
-};
-
-return table[months];
+function rate(m){
+return {
+0:0,1:10,3:15,6:20,12:25,24:30,36:35,60:40,100:50
+}[m];
 }
 
 function load(){
-
 data=JSON.parse(localStorage.getItem(key()))||[];
-
 update();
-
 }
 
 function save(){
 
 const obj={
-
 date:new Date().toLocaleString(),
-
-staff:staff.value,
-
+staff:staff.value||"未入力",
 months:Number(months.value),
-
 rate:rate(Number(months.value)),
-
 medical:medical.checked,
-
 premium:premium.checked,
-
 loan:loan.checked,
-
 hospital:hospital.checked,
-
 futai:Number(futai.value)||0
-
 };
 
 if(editIndex==-1)
@@ -226,7 +206,6 @@ editIndex=-1;
 localStorage.setItem(key(),JSON.stringify(data));
 
 clear();
-
 update();
 
 }
@@ -269,109 +248,80 @@ futai.value="";
 
 }
 
+function percent(val,goal){
+return `<span class="${val>=goal?"green":"red"}">${val.toFixed(1)}%</span>`;
+}
+
 function update(){
 
 const goal=goals[shop.value];
-
 const count=data.length;
 
 const seihos=data.filter(x=>x.months>0).length;
-
 const seihorate=count?seihos/count*100:0;
-
-const seihomoney=count?
-data.reduce((a,b)=>a+b.rate,0)/count:0;
-
-const medicalrate=count?
-data.filter(x=>x.medical).length/count*100:0;
-
-const loanrate=count?
-data.filter(x=>x.loan).length/count*100:0;
-
-const premiumrate=count?
-data.filter(x=>x.premium).length/count*100:0;
-
-const hospitalrate=count?
-data.filter(x=>x.hospital).length/count*100:0;
-
-const futaiavg=count?
-data.reduce((a,b)=>a+b.futai,0)/count:0;
+const seihomoney=count?data.reduce((a,b)=>a+b.rate,0)/count:0;
+const medicalrate=count?data.filter(x=>x.medical).length/count*100:0;
+const loanrate=count?data.filter(x=>x.loan).length/count*100:0;
+const premiumrate=count?data.filter(x=>x.premium).length/count*100:0;
+const hospitalrate=count?data.filter(x=>x.hospital).length/count*100:0;
+const futaiavg=count?data.reduce((a,b)=>a+b.futai,0)/count:0;
 
 kpi.innerHTML=`
-
 販売進捗：${count}/${goal}（残り${goal-count}）<br><br>
-
-生保加入率：
-<span class="${seihorate>=90?"green":"red"}">
-${seihorate.toFixed(1)}%
-</span><br>
-
-生保金額率：
-<span class="${seihomoney>=30?"green":"red"}">
-${seihomoney.toFixed(1)}%
-</span><br>
-
-医保加入率：
-<span class="${medicalrate>=90?"green":"red"}">
-${medicalrate.toFixed(1)}%
-</span><br>
-
-ローン率：
-<span class="${loanrate>=25?"green":"red"}">
-${loanrate.toFixed(1)}%
-</span><br>
-
-プレミアム率：
-<span class="${premiumrate>=100?"green":"red"}">
-${premiumrate.toFixed(1)}%
-</span><br>
-
-病院予約率：
-<span class="${hospitalrate>=100?"green":"red"}">
-${hospitalrate.toFixed(1)}%
-</span><br>
-
-付帯平均：
-<span class="${futaiavg>=30000?"green":"red"}">
-${Math.round(futaiavg)}円
-</span>
-
+生保加入率：${percent(seihorate,90)}<br>
+生保金額率：${percent(seihomoney,30)}<br>
+医保加入率：${percent(medicalrate,90)}<br>
+ローン率：${percent(loanrate,25)}<br>
+プレミアム率：${percent(premiumrate,100)}<br>
+病院予約率：${percent(hospitalrate,100)}<br>
+付帯平均：<span class="${futaiavg>=30000?"green":"red"}">${Math.round(futaiavg)}円</span>
 `;
+
+let staffMap={};
+
+data.forEach(d=>{
+if(!staffMap[d.staff]) staffMap[d.staff]=[];
+staffMap[d.staff].push(d);
+});
+
+staffKpi.innerHTML="";
+
+for(let name in staffMap){
+
+let list=staffMap[name];
+let c=list.length;
+let s=list.filter(x=>x.months>0).length;
+let r=c?s/c*100:0;
+
+staffKpi.innerHTML+=`
+<div class="staffBox">
+<b>${name}</b><br>
+販売：${c}<br>
+生保加入率：${r.toFixed(1)}%
+</div>
+`;
+}
 
 history.innerHTML="";
 
 data.slice().reverse().forEach((d,i)=>{
 
-const real=data.length-1-i;
+let real=data.length-1-i;
 
 history.innerHTML+=`
-
 <div class="history">
-
 ${d.date}<br>
-
 ${d.staff}<br>
-
 生保:${d.months}ヶ月　
 医保:${d.medical?"〇":"×"}　
 プレミアム:${d.premium?"〇":"×"}　
 ローン:${d.loan?"〇":"×"}　
 病院:${d.hospital?"〇":"×"}<br>
-
 付帯:${d.futai}円<br>
-
-<button class="smallBtn" onclick="edit(${real})">
-編集
-</button>
-
-<button class="smallBtn" onclick="del(${real})">
-削除
-</button>
-
+<button class="smallBtn" onclick="edit(${real})">編集</button>
+<button class="smallBtn" onclick="del(${real})">削除</button>
 </div>
-
 `;
-
 });
 
 }
