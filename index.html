@@ -22,10 +22,6 @@ margin-bottom:15px;
 border-radius:10px;
 }
 
-h2{
-margin-top:0;
-}
-
 input,select{
 width:100%;
 padding:12px;
@@ -43,7 +39,6 @@ color:white;
 border:none;
 border-radius:8px;
 font-size:16px;
-margin-top:10px;
 }
 
 .safe{
@@ -59,17 +54,13 @@ font-weight:bold;
 .history{
 border-bottom:1px solid #eee;
 padding:10px 0;
-font-size:14px;
 }
 
-
-/* チェックボックス完全修正 */
 .checkbox-row{
 display:flex;
 align-items:center;
 gap:10px;
 margin:8px 0;
-font-size:16px;
 }
 
 .checkbox-row input{
@@ -77,12 +68,6 @@ width:auto;
 transform:scale(1.3);
 }
 
-.checkbox-row span{
-white-space:nowrap;
-}
-
-
-/* タブ */
 .tab{
 display:flex;
 margin-bottom:10px;
@@ -121,24 +106,21 @@ color:white;
 </div>
 
 
-
 <div class="card">
 
 <label>店舗</label>
 
 <select id="storeSelect" onchange="loadData()">
+
 <option value="足立店">足立店</option>
 <option value="江戸川店">江戸川店</option>
-</select>
 
+</select>
 
 
 <label>担当者（フルネーム）</label>
 
-<input type="text" id="staffInput" list="staffList">
-
-<datalist id="staffList"></datalist>
-
+<input type="text" id="staffInput">
 
 
 <label>生保期間</label>
@@ -158,24 +140,20 @@ color:white;
 </select>
 
 
-
 <label class="checkbox-row">
 <input type="checkbox" id="medical">
 <span>医保加入</span>
 </label>
-
 
 <label class="checkbox-row">
 <input type="checkbox" id="premium">
 <span>プレミアム加入</span>
 </label>
 
-
 <label class="checkbox-row">
 <input type="checkbox" id="loan">
 <span>ローン利用</span>
 </label>
-
 
 <label class="checkbox-row">
 <input type="checkbox" id="hospital">
@@ -183,13 +161,9 @@ color:white;
 </label>
 
 
-
 <label>付帯金額（円）</label>
 
-<input type="number"
-id="futai"
-placeholder="例：30000">
-
+<input type="number" id="futai">
 
 
 <button onclick="addContract()">
@@ -201,22 +175,21 @@ placeholder="例：30000">
 
 
 <div class="card" id="storeKPI">
+
 <h3>店舗KPI</h3>
+
 <div id="storeStatus"></div>
-</div>
 
-
-
-<div class="card" id="staffKPI" style="display:none;">
-<h3>担当者KPI</h3>
-<div id="staffStatus"></div>
 </div>
 
 
 
 <div class="card">
+
 <h3>履歴</h3>
+
 <div id="history"></div>
+
 </div>
 
 
@@ -244,17 +217,18 @@ const RATE_MAP={
 let contracts=[];
 
 
-
 function key(){
-return "kpi_"+storeSelect.value;
-}
 
+return "kpi_"+storeSelect.value;
+
+}
 
 
 function save(){
-localStorage.setItem(key(),JSON.stringify(contracts));
-}
 
+localStorage.setItem(key(),JSON.stringify(contracts));
+
+}
 
 
 function loadData(){
@@ -264,10 +238,7 @@ JSON.parse(localStorage.getItem(key())||"[]");
 
 update();
 
-updateStaffList();
-
 }
-
 
 
 function addContract(){
@@ -275,16 +246,24 @@ function addContract(){
 const staff=staffInput.value;
 
 if(!staff){
+
 alert("担当者名を入力してください");
+
 return;
+
 }
 
-const months=Number(insurance.value);
+
+const months=
+Number(insurance.value);
+
 
 contracts.push({
 
-staff,
-months,
+staff:staff,
+
+months:months,
+
 rate:RATE_MAP[months],
 
 medical:medical.checked,
@@ -298,10 +277,23 @@ date:new Date().toLocaleString()
 
 });
 
+
 save();
 
 staffInput.value="";
 futai.value="";
+
+loadData();
+
+}
+
+
+
+function deleteContract(index){
+
+contracts.splice(index,1);
+
+save();
 
 loadData();
 
@@ -320,9 +312,7 @@ const count=contracts.length;
 const remain=target-count;
 
 
-
 let join=0,rate=0,medicalC=0,premiumC=0,loanC=0,hospitalC=0,futaiTotal=0;
-
 
 
 contracts.forEach(c=>{
@@ -332,14 +322,16 @@ if(c.rate>0) join++;
 rate+=c.rate;
 
 if(c.medical) medicalC++;
+
 if(c.premium) premiumC++;
+
 if(c.loan) loanC++;
+
 if(c.hospital) hospitalC++;
 
 futaiTotal+=c.futai;
 
 });
-
 
 
 const joinRate=count?join/count*100:0;
@@ -351,19 +343,20 @@ const hospitalRate=count?hospitalC/count*100:0;
 const futaiAvg=count?futaiTotal/count:0;
 
 
-
 function need(current,targetRate){
 
-const targetTotal=Math.ceil(target*targetRate/100);
+const targetTotal=
+Math.ceil(target*targetRate/100);
 
-const needCount=targetTotal-current;
+const needCount=
+targetTotal-current;
 
-const needRate=remain?needCount/remain*100:0;
+const needRate=
+remain?needCount/remain*100:0;
 
 return `${needCount}件（${needRate.toFixed(1)}%）`;
 
 }
-
 
 
 storeStatus.innerHTML=`
@@ -394,68 +387,15 @@ ${rateAvg.toFixed(1)}%
 必要平均：
 ${remain?((TARGET.rate*target-rate)/remain).toFixed(1):0}%
 
-<br><br>
-
-医保加入率：
-<span class="${medicalRate>=TARGET.medical?'safe':'danger'}">
-${medicalRate.toFixed(1)}%
-</span>
-
-<br>
-必要：
-${need(medicalC,TARGET.medical)}
-
-<br><br>
-
-付帯平均：
-<span class="${futaiAvg>=TARGET.futai?'safe':'danger'}">
-${futaiAvg.toFixed(0)}円
-</span>
-
-<br>
-必要平均：
-${remain?((TARGET.futai*target-futaiTotal)/remain).toFixed(0):0}円
-
-<br><br>
-
-ローン率：
-<span class="${loanRate>=TARGET.loan?'safe':'danger'}">
-${loanRate.toFixed(1)}%
-</span>
-
-<br>
-必要：
-${need(loanC,TARGET.loan)}
-
-<br><br>
-
-プレミアム率：
-<span class="${premiumRate>=TARGET.premium?'safe':'danger'}">
-${premiumRate.toFixed(1)}%
-</span>
-
-<br>
-必要：
-${need(premiumC,TARGET.premium)}
-
-<br><br>
-
-病院予約率：
-<span class="${hospitalRate>=TARGET.hospital?'safe':'danger'}">
-${hospitalRate.toFixed(1)}%
-</span>
-
-<br>
-必要：
-${need(hospitalC,TARGET.hospital)}
-
 `;
 
 
+// 履歴表示（完全版）
 
 history.innerHTML="";
 
-contracts.forEach((c,i)=>{
+
+contracts.slice().reverse().forEach((c,i)=>{
 
 history.innerHTML+=`
 
@@ -474,7 +414,9 @@ ${c.date}<br>
 
 付帯：${c.futai.toLocaleString()}円<br>
 
-<button onclick="del(${i})">削除</button>
+<button onclick="deleteContract(${contracts.length-1-i})">
+削除
+</button>
 
 </div>
 
@@ -483,88 +425,12 @@ ${c.date}<br>
 });
 
 
-updateStaffKPI();
-
 }
-
-
-
-function del(i){
-
-contracts.splice(i,1);
-
-save();
-
-loadData();
-
-}
-
-
-
-function updateStaffList(){
-
-const names=[...new Set(contracts.map(c=>c.staff))];
-
-staffList.innerHTML="";
-
-names.forEach(n=>{
-staffList.innerHTML+=`<option value="${n}">`;
-});
-
-}
-
-
-
-function updateStaffKPI(){
-
-let html="";
-
-const staffNames=[...new Set(contracts.map(c=>c.staff))];
-
-staffNames.forEach(name=>{
-
-const list=contracts.filter(c=>c.staff==name);
-
-const count=list.length;
-
-const join=list.filter(c=>c.rate>0).length;
-
-const rate=list.reduce((a,b)=>a+b.rate,0)/count||0;
-
-html+=`
-
-<b>${name}</b><br>
-
-販売:${count}<br>
-
-生保加入率:${(join/count*100||0).toFixed(1)}%<br>
-
-生保金額率:${rate.toFixed(1)}%<br><br>
-
-`;
-
-});
-
-staffStatus.innerHTML=html;
-
-}
-
 
 
 function showTab(tab){
 
-storeKPI.style.display=
-tab=="store"?"block":"none";
-
-staffKPI.style.display=
-tab=="staff"?"block":"none";
-
-tabStore.classList.toggle("active",tab=="store");
-
-tabStaff.classList.toggle("active",tab=="staff");
-
 }
-
 
 
 loadData();
